@@ -436,7 +436,7 @@ n8n-for-network-security/
 
 ```bash
 # Clone this repository
-git clone https://github.com/yourusername/n8n-for-network-security.git
+git clone https://github.com/fareesazuan/n8n-for-network-security.git
 cd n8n-for-network-security
 
 # Start with the learning roadmap
