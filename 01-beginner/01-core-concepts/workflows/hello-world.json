@@ -1,0 +1,178 @@
+{
+  "name": "Hello Security World",
+  "active": true,
+  "description": "First n8n workflow: Query threat intelligence and check if IP is malicious",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {}
+    },
+    {
+      "id": "2",
+      "name": "Set IP Address",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "parameters": {
+        "jsCode": "// Set a sample IP to check against threat intelligence\nreturn {\n  ip_to_check: \"192.168.1.100\",\n  timestamp: new Date().toISOString(),\n  workflow: \"Hello Security World\",\n  source: \"learning-module\"\n};"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Query Threat Intel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.7,
+      "position": [650, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "IP Check: {{ $node[\"Set IP Address\"].json.ip_to_check }}"
+            },
+            {
+              "name": "body",
+              "value": "Checking threat intelligence at {{ $node[\"Set IP Address\"].json.timestamp }}"
+            },
+            {
+              "name": "userId",
+              "value": "1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "Check if Suspicious",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $node[\"Query Threat Intel\"].json.id }}",
+            "operator": {
+              "name": "filter.operator.gte",
+              "value": "gte"
+            },
+            "rightValue": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Format Malicious",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [700, 450],
+      "parameters": {
+        "jsCode": "// IP is considered suspicious or malicious\nreturn {\n  ip: $node[\"Set IP Address\"].json.ip_to_check,\n  status: \"SUSPICIOUS\",\n  severity: \"HIGH\",\n  action_required: true,\n  recommended_action: \"Block IP on firewall and create incident ticket\",\n  threat_level: \"HIGH\",\n  processed_at: new Date().toISOString()\n};"
+      }
+    },
+    {
+      "id": "6",
+      "name": "Format Clean",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1000, 450],
+      "parameters": {
+        "jsCode": "// IP is clean, no action needed\nreturn {\n  ip: $node[\"Set IP Address\"].json.ip_to_check,\n  status: \"CLEAN\",\n  severity: \"LOW\",\n  action_required: false,\n  recommended_action: \"No action needed\",\n  threat_level: \"LOW\",\n  processed_at: new Date().toISOString()\n};"
+      }
+    },
+    {
+      "id": "7",
+      "name": "Log Result",
+      "type": "n8n-nodes-base.log",
+      "typeVersion": 1,
+      "position": [850, 600],
+      "parameters": {
+        "message": "Threat check completed. Status: {{ $node[\"Format Malicious\"].json?.status || $node[\"Format Clean\"].json?.status || \"unknown\" }}"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set IP Address",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set IP Address": {
+      "main": [
+        [
+          {
+            "node": "Query Threat Intel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Threat Intel": {
+      "main": [
+        [
+          {
+            "node": "Check if Suspicious",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Suspicious": {
+      "main": [
+        [
+          {
+            "node": "Format Malicious",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Malicious": {
+      "main": [
+        [
+          {
+            "node": "Log Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Clean": {
+      "main": [
+        [
+          {
+            "node": "Log Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
